@@ -1,5 +1,10 @@
 import mongoose, { Schema, type InferSchemaType } from 'mongoose'
 
+const SubtaskSchema = new Schema({
+  title: { type: String, required: true, trim: true },
+  completed: { type: Boolean, default: false },
+}, { _id: false })
+
 const TodoSchema = new Schema(
   {
     userId: { type: Schema.Types.ObjectId, ref: 'User', required: true, index: true },
@@ -15,6 +20,21 @@ const TodoSchema = new Schema(
     category: { type: String, required: true, index: true },
     dueDate: { type: Date },
     tags: { type: [String], default: [], index: true },
+    // New fields
+    subtasks: { type: [SubtaskSchema], default: [] },
+    recurrence: {
+      type: String,
+      enum: ['none', 'daily', 'weekdays', 'weekly', 'monthly'],
+      default: 'none',
+    },
+    status: {
+      type: String,
+      enum: ['todo', 'in-progress', 'done'],
+      default: 'todo',
+      index: true,
+    },
+    order: { type: Number, default: 0 },
+    isShared: { type: Boolean, default: false },
   },
   { timestamps: true }
 )
@@ -30,4 +50,3 @@ export type TodoDoc = InferSchemaType<typeof TodoSchema> & {
 export const TodoModel =
   (mongoose.models.Todo as mongoose.Model<TodoDoc>) ||
   mongoose.model<TodoDoc>('Todo', TodoSchema)
-
