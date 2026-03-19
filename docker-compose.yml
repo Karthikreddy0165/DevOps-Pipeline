@@ -1,43 +1,26 @@
 version: '3.8'
-
 services:
   app:
-    build:
-      context: .
-      dockerfile: Dockerfile
+    build: .
     ports:
-      - "3000:3000"
+      - '3000:3000'
+    env_file:
+      - .env
     environment:
-      - NODE_ENV=production
       - MONGODB_URI=mongodb://mongo:27017/taskflow
-      - JWT_SECRET=${JWT_SECRET:-change-this-in-production-must-be-32-chars-min}
       - NEXTAUTH_URL=http://localhost:3000
-      - NEXTAUTH_SECRET=${NEXTAUTH_SECRET:-change-this-in-production}
+      - NEXTAUTH_SECRET=simple_secret_key_change_in_production
+      - GOOGLE_CLIENT_ID=${GOOGLE_CLIENT_ID}
+      - GOOGLE_CLIENT_SECRET=${GOOGLE_CLIENT_SECRET}
     depends_on:
-      mongo:
-        condition: service_healthy
-    restart: unless-stopped
-    healthcheck:
-      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:3000/api/health"]
-      interval: 30s
-      timeout: 5s
-      retries: 3
-      start_period: 15s
+      - mongo
 
   mongo:
-    image: mongo:7
+    image: mongo:6.0
     ports:
-      - "27017:27017"
+      - '27017:27017'
     volumes:
-      - mongo-data:/data/db
-    healthcheck:
-      test: echo 'db.runCommand("ping").ok' | mongosh --quiet
-      interval: 10s
-      timeout: 5s
-      retries: 5
-      start_period: 10s
-    restart: unless-stopped
+      - mongo_data:/data/db
 
 volumes:
-  mongo-data:
-    driver: local
+  mongo_data:

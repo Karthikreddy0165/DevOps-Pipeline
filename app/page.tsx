@@ -1,401 +1,171 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import TodoList from '@/components/TodoList';
-import TodoForm from '@/components/TodoForm';
-import Stats from '@/components/Stats';
-import AuthForm from '@/components/AuthForm';
-import Sidebar, { ViewType } from '@/components/Sidebar';
-import QuickAdd from '@/components/QuickAdd';
-import KanbanBoard from '@/components/KanbanBoard';
-import { useAuth } from '@/contexts/AuthContext';
-import { Search, Filter, CheckSquare, Sparkles } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { signIn, signOut, useSession } from 'next-auth/react';
+import './globals.css';
 
-export interface Todo {
-  id: string;
+type Todo = {
+  _id: string;
   title: string;
-  description?: string;
-  completed: boolean;
-  priority: 'low' | 'medium' | 'high';
-  category: string;
-  dueDate?: string;
-  tags: string[];
-  createdAt: string;
-  updatedAt: string;
-  subtasks?: { title: string; completed: boolean }[];
-  recurrence?: string;
-  status?: string;
-}
-
-export interface Category {
-  id: string;
-  name: string;
-  color: string;
-}
+  notes: string;
+  sharedWith: string[];
+  whatsappNumber: string;
+  reminderTime: string;
+};
 
 export default function Home() {
-  const { user, loading: authLoading, logout } = useAuth();
-  const [authMode, setAuthMode] = useState<'login' | 'signup'>('login');
+  const { data: session, status } = useSession();
   const [todos, setTodos] = useState<Todo[]>([]);
-  const [categories, setCategories] = useState<Category[]>([]);
-  const [selectedCategory, setSelectedCategory] = useState<string>('all');
-  const [view, setView] = useState<ViewType>('all');
-  const [q, setQ] = useState('');
-  const [showCompleted, setShowCompleted] = useState(true);
-  const [loading, setLoading] = useState(true);
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
-
-  const apiUrl = process.env.NEXT_PUBLIC_API_URL || '/api';
+  const [title, setTitle] = useState('');
+  const [notes, setNotes] = useState('');
+  const [sharedWith, setSharedWith] = useState('');
+  const [whatsappNumber, setWhatsappNumber] = useState('');
+  const [reminderTime, setReminderTime] = useState('');
 
   useEffect(() => {
-    if (user) {
-      fetchTodos();
-      fetchCategories();
+    if (status === 'authenticated') {
+      fetch('/api/todos')
+        .then((res) => res.json())
+        .then((data) => {
+          if (Array.isArray(data)) setTodos(data);
+        });
     }
-  }, [user, selectedCategory, view, showCompleted]);
+  }, [status]);
 
-  useEffect(() => {
-    const t = setTimeout(() => {
-      if (user) fetchTodos();
-    }, 250);
-    return () => clearTimeout(t);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [q]);
+  if (status === 'loading') return <div>Loading...</div>;
 
-  const fetchTodos = async () => {
-    try {
-      const params = new URLSearchParams();
-      if (selectedCategory !== 'all') params.set('category', selectedCategory);
-      if (!showCompleted) params.set('completed', 'false');
-      if (view !== 'all' && view !== 'kanban' && view !== 'shared') params.set('view', view);
-      if (q.trim()) params.set('q', q.trim());
+  if (status === 'unauthenticated') {
+    return (
+      <div className="container">
+        <h1>Welcome to TaskFlow</h1>
+        <p style={{ textAlign: 'center', marginBottom: '20px' }}>
+          Please sigin in to manage your tasks, share them, and set WhatsApp
+          reminders.
+        </p>
+        <button className="auth-btn" onClick={() => signIn()}>
+          Sign In / Register
+        </button>
+      </div>
+    );
+  }
 
-      const url = params.toString() ? `${apiUrl}/todos?${params.toString()}` : `${apiUrl}/todos`;
-      const response = await fetch(url, { credentials: 'include' });
-      if (response.status === 401) return;
-      const data = await response.json();
-      setTodos(data.todos || []);
-    } catch (error) {
-      console.error('Failed to fetch todos:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
+  const addTodo = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!title.trim()) return;
 
-  const fetchCategories = async () => {
-    try {
-      const response = await fetch(`${apiUrl}/categories`, { credentials: 'include' });
-      if (response.status === 401) return;
-      const data = await response.json();
-      setCategories(data.categories || []);
-    } catch (error) {
-      console.error('Failed to fetch categories:', error);
-    }
-  };
-
-  const handleAddTodo = async (todoData: Omit<Todo, 'id' | 'createdAt' | 'updatedAt'>) => {
-    try {
-      const response = await fetch(`${apiUrl}/todos`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(todoData),
-        credentials: 'include',
-      });
-      const data = await response.json();
-      if (data.todo) {
-        setTodos([data.todo, ...todos]);
-      }
-    } catch (error) {
-      console.error('Failed to create todo:', error);
-    }
-  };
-
-  const handleQuickAdd = async (title: string) => {
-    handleAddTodo({
-      title,
-      description: '',
-      priority: 'medium',
-      category: 'general',
-      completed: false,
-      tags: [],
-      status: 'todo',
+    const res = await fetch('/api/todos', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        title,
+        notes,
+        sharedWith,
+        whatsappNumber,
+        reminderTime,
+      }),
     });
-  };
 
-  const handleToggleTodo = async (id: string) => {
-    try {
-      const response = await fetch(`${apiUrl}/todos/${id}/toggle`, {
-        method: 'POST',
-        credentials: 'include',
-      });
-      const data = await response.json();
-      if (data.todo) {
-        setTodos(todos.map(todo => todo.id === id ? data.todo : todo));
-      }
-    } catch (error) {
-      console.error('Failed to toggle todo:', error);
+    if (res.ok) {
+      const newTodo = await res.json();
+      setTodos([newTodo, ...todos]);
+      setTitle('');
+      setNotes('');
+      setSharedWith('');
+      setWhatsappNumber('');
+      setReminderTime('');
     }
   };
 
-  const handleDeleteTodo = async (id: string) => {
-    try {
-      await fetch(`${apiUrl}/todos/${id}`, {
-        method: 'DELETE',
-        credentials: 'include',
-      });
-      setTodos(todos.filter(todo => todo.id !== id));
-    } catch (error) {
-      console.error('Failed to delete todo:', error);
-    }
+  const deleteTodo = async (id: string) => {
+    const res = await fetch(`/api/todos/${id}`, { method: 'DELETE' });
+    if (res.ok) setTodos(todos.filter((t) => t._id !== id));
   };
 
-  // Compute counts for sidebar
-  const todayCount = todos.filter(t => {
-    if (!t.dueDate) return false;
-    const d = new Date(t.dueDate);
-    const now = new Date();
-    return d.toDateString() === now.toDateString();
-  }).length;
-
-  const overdueCount = todos.filter(t => {
-    if (!t.dueDate || t.completed) return false;
-    return new Date(t.dueDate) < new Date();
-  }).length;
-
-  // ─── Auth screen ─────────────────────────
-  if (authLoading) {
-    return (
-      <main
-        style={{
-          minHeight: '100vh',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          background: 'var(--gradient-bg)',
-        }}
-      >
-        <motion.div
-          initial={{ opacity: 0, scale: 0.9 }}
-          animate={{ opacity: 1, scale: 1 }}
-          style={{ textAlign: 'center' }}
-        >
-          <div
-            style={{
-              width: 48,
-              height: 48,
-              borderRadius: 14,
-              background: 'var(--gradient-main)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              margin: '0 auto 16px',
-            }}
-          >
-            <Sparkles size={24} color="white" />
-          </div>
-          <div className="skeleton" style={{ width: 120, height: 16, margin: '0 auto' }} />
-        </motion.div>
-      </main>
-    );
-  }
-
-  if (!user) {
-    return (
-      <main
-        style={{
-          minHeight: '100vh',
-          display: 'flex',
-          flexDirection: 'column',
-          alignItems: 'center',
-          justifyContent: 'center',
-          padding: '32px 16px',
-          background: 'var(--gradient-bg)',
-        }}
-      >
-        {/* Auth hero */}
-        <motion.div
-          initial={{ opacity: 0, y: -20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6 }}
-          style={{ textAlign: 'center', marginBottom: 32 }}
-        >
-          <h1
-            style={{
-              fontSize: '2.4rem',
-              fontWeight: 900,
-              fontFamily: 'var(--font-heading)',
-              background: 'var(--gradient-main)',
-              WebkitBackgroundClip: 'text',
-              WebkitTextFillColor: 'transparent',
-              backgroundClip: 'text',
-              marginBottom: 8,
-            }}
-          >
-            TaskFlow
-          </h1>
-          <p style={{ fontSize: '1rem', color: 'var(--text-secondary)', maxWidth: 400 }}>
-            The todo app that actually makes you productive. Beautiful, collaborative, and intelligent.
-          </p>
-        </motion.div>
-        <AuthForm mode={authMode} onSwitch={() => setAuthMode(authMode === 'login' ? 'signup' : 'login')} />
-      </main>
-    );
-  }
-
-  // ─── Main App ────────────────────────────
   return (
-    <div className="app-shell">
-      <Sidebar
-        currentView={view}
-        onViewChange={setView}
-        categories={categories}
-        selectedCategory={selectedCategory}
-        onCategorySelect={setSelectedCategory}
-        todoCount={todos.length}
-        todayCount={todayCount}
-        overdueCount={overdueCount}
-      />
+    <div className="container" style={{ maxWidth: '600px' }}>
+      <div className="header">
+        <h1>My Tasks</h1>
+        <button onClick={() => signOut()} className="logout-btn">
+          Logout ({session?.user?.email})
+        </button>
+      </div>
 
-      <main className={`main-content ${sidebarCollapsed ? 'collapsed' : ''}`}>
-        {/* Top bar */}
-        <motion.div
-          initial={{ opacity: 0, y: -10 }}
-          animate={{ opacity: 1, y: 0 }}
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            marginBottom: 24,
-            flexWrap: 'wrap',
-            gap: 12,
-          }}
-        >
-          <div>
-            <h2
-              style={{
-                fontSize: '1.6rem',
-                fontWeight: 800,
-                fontFamily: 'var(--font-heading)',
-                color: 'var(--text-primary)',
-              }}
-            >
-              {view === 'all' && 'All Tasks'}
-              {view === 'today' && "Today's Tasks"}
-              {view === 'overdue' && 'Overdue Tasks'}
-              {view === 'upcoming' && 'Upcoming Tasks'}
-              {view === 'kanban' && 'Board View'}
-              {view === 'shared' && 'Shared With Me'}
-            </h2>
-            <p style={{ fontSize: '0.85rem', color: 'var(--text-tertiary)', marginTop: 2 }}>
-              {new Date().toLocaleDateString('en-US', {
-                weekday: 'long',
-                month: 'long',
-                day: 'numeric',
-              })}
-            </p>
-          </div>
+      <form onSubmit={addTodo} className="task-form">
+        <input
+          required
+          type="text"
+          value={title}
+          onChange={(e) => setTitle(e.target.value)}
+          placeholder="Task Title"
+          className="input-field full-width"
+        />
+        <textarea
+          value={notes}
+          onChange={(e) => setNotes(e.target.value)}
+          placeholder="Add some notes (optional)..."
+          className="input-field full-width"
+          rows={2}
+        />
 
-          {/* Search bar */}
-          <div
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: 8,
-              background: 'var(--bg-secondary)',
-              border: '1px solid var(--border-color)',
-              borderRadius: 'var(--radius-md)',
-              padding: '8px 14px',
-              width: 280,
-              maxWidth: '100%',
-            }}
-          >
-            <Search size={16} color="var(--text-tertiary)" />
-            <input
-              value={q}
-              onChange={(e) => setQ(e.target.value)}
-              placeholder="Search tasks..."
-              style={{
-                flex: 1,
-                border: 'none',
-                outline: 'none',
-                background: 'transparent',
-                color: 'var(--text-primary)',
-                fontSize: '0.85rem',
-                fontFamily: 'var(--font-body)',
-              }}
-            />
-          </div>
-        </motion.div>
-
-        {/* Stats */}
-        <Stats todos={todos} />
-
-        {/* Quick add */}
-        <QuickAdd onAdd={handleQuickAdd} />
-
-        {/* Show completed toggle */}
-        <div
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            marginBottom: 16,
-          }}
-        >
-          <label
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: 8,
-              fontSize: '0.82rem',
-              color: 'var(--text-secondary)',
-              cursor: 'pointer',
-            }}
-          >
-            <input
-              type="checkbox"
-              checked={showCompleted}
-              onChange={(e) => setShowCompleted(e.target.checked)}
-              style={{ width: 14, height: 14, accentColor: 'var(--accent)' }}
-            />
-            Show completed
-          </label>
-          <span style={{ fontSize: '0.78rem', color: 'var(--text-tertiary)' }}>
-            {todos.length} task{todos.length !== 1 ? 's' : ''}
-          </span>
+        <div className="flex-row">
+          <input
+            type="text"
+            value={sharedWith}
+            onChange={(e) => setSharedWith(e.target.value)}
+            placeholder="Share to (comma separated emails)..."
+            className="input-field"
+          />
+          <input
+            type="text"
+            value={whatsappNumber}
+            onChange={(e) => setWhatsappNumber(e.target.value)}
+            placeholder="WhatsApp # for Reminder..."
+            className="input-field"
+          />
         </div>
 
-        {/* Todo form or Kanban */}
-        {view !== 'kanban' && (
-          <div style={{ marginBottom: 20 }}>
-            <TodoForm categories={categories} onSubmit={handleAddTodo} />
-          </div>
-        )}
+        <div style={{ marginTop: '10px', paddingBottom: '10px' }}>
+          <label className="label">Notify me before (Date/Time): </label>
+          <input
+            type="datetime-local"
+            value={reminderTime}
+            onChange={(e) => setReminderTime(e.target.value)}
+            className="input-field"
+          />
+        </div>
 
-        {/* Content */}
-        {loading ? (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-            {[1, 2, 3].map((i) => (
-              <div key={i} className="skeleton" style={{ height: 72, borderRadius: 'var(--radius-lg)' }} />
-            ))}
-          </div>
-        ) : view === 'kanban' ? (
-          <KanbanBoard
-            todos={todos}
-            categories={categories}
-            onToggle={handleToggleTodo}
-            onDelete={handleDeleteTodo}
-          />
-        ) : (
-          <TodoList
-            todos={todos}
-            categories={categories}
-            onToggle={handleToggleTodo}
-            onDelete={handleDeleteTodo}
-          />
+        <button type="submit" className="add-btn full-width">
+          Add Comprehensive Task
+        </button>
+      </form>
+
+      <ul className="todo-list">
+        {todos.map((todo) => (
+          <li key={todo._id} className="todo-item-complex">
+            <div className="todo-content">
+              <h3>{todo.title}</h3>
+              {todo.notes && <p className="todo-notes">{todo.notes}</p>}
+
+              <div className="todo-meta">
+                {todo.sharedWith.length > 0 && <span>👥 Shared</span>}
+                {todo.reminderTime && (
+                  <span>⏰ {new Date(todo.reminderTime).toLocaleString()}</span>
+                )}
+                {todo.whatsappNumber && <span>📱 WhatsApp On</span>}
+              </div>
+            </div>
+
+            <button onClick={() => deleteTodo(todo._id)} className="delete-btn">
+              Delete
+            </button>
+          </li>
+        ))}
+        {todos.length === 0 && (
+          <p style={{ textAlign: 'center', color: 'gray', marginTop: '20px' }}>
+            No tasks found. Create or receive a shared task above!
+          </p>
         )}
-      </main>
+      </ul>
     </div>
   );
 }

@@ -1,29 +1,19 @@
 #!/bin/bash
-
-# Idempotent Deployment Script
-# This script ensures the directory exists and restarts the service safely.
-
 set -e
 
-PROJECT_DIR="/home/ubuntu/taskflow"
+echo "Starting Dockerized Deployment process..."
 
-echo "➡️ Setting up deployment directory..."
-mkdir -p "$PROJECT_DIR"
-cd "$PROJECT_DIR"
+# Enforce idempotency - directories exist
+mkdir -p ~/app/logs
+mkdir -p ~/app/data
 
-echo "➡️ Pulling latest changes (simulated)..."
-# In a real environment, you'd run git pull here
-# git pull origin main
+cd ~/app
 
-echo "➡️ Checking if Docker containers are running..."
-if docker-compose ps | grep "Up" > /dev/null; then
-  echo "⚠️ Containers are already running. Stopping them first to ensure clean state..."
-  docker-compose down
-else
-  echo "✅ No running containers found. Proceeding cleanly."
-fi
+# Ensure correct env fields are ready to go in production
+touch .env
 
-echo "➡️ Rebuilding and starting application..."
-docker-compose up -d --build
+echo "Pulling Latest Docker Images & Restarting Services..."
+# docker-compose allows idempotent service execution cleanly removing old containers
+docker-compose --env-file .env up -d --build
 
-echo "🎉 Deployment completed successfully. Service is up!"
+echo "Deployment Successful via Docker!"
