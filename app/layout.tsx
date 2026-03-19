@@ -1,10 +1,17 @@
 import type { Metadata } from 'next'
 import './globals.css'
 import { AuthProvider } from '@/contexts/AuthContext'
+import { ThemeProvider } from '@/contexts/ThemeContext'
 
 export const metadata: Metadata = {
-  title: process.env.NEXT_PUBLIC_APP_NAME || 'Todo Manager',
-  description: 'A fullstack todo management application built with Next.js',
+  title: 'TaskFlow — Smart Todo Manager',
+  description: 'A production-grade task management app with collaboration, smart views, and beautiful UI.',
+  keywords: ['todo', 'task manager', 'productivity', 'collaboration', 'kanban'],
+  openGraph: {
+    title: 'TaskFlow — Smart Todo Manager',
+    description: 'A production-grade task management app with collaboration and beautiful UI.',
+    type: 'website',
+  },
 }
 
 export default function RootLayout({
@@ -13,9 +20,11 @@ export default function RootLayout({
   children: React.ReactNode
 }) {
   return (
-    <html lang="en">
+    <html lang="en" data-theme="dark" suppressHydrationWarning>
       <body className="antialiased">
-        <AuthProvider>{children}</AuthProvider>
+        <ThemeProvider>
+          <AuthProvider>{children}</AuthProvider>
+        </ThemeProvider>
       </body>
     </html>
   )
