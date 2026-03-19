@@ -1,35 +1,32 @@
-import mongoose from 'mongoose'
+import mongoose from 'mongoose';
 
-const MONGODB_URI = process.env.MONGODB_URI
+const MONGODB_URI =
+  process.env.MONGODB_URI || 'mongodb://localhost:27017/taskflow';
+
 if (!MONGODB_URI) {
-  throw new Error('Missing env var: MONGODB_URI')
+  throw new Error('Please define the MONGODB_URI environment variable');
 }
-const MONGODB_URI_STR: string = MONGODB_URI
-
-type Cached = {
-  conn: typeof mongoose | null
-  promise: Promise<typeof mongoose> | null
-}
-
 declare global {
-  // eslint-disable-next-line no-var
-  var _mongoose: Cached | undefined
+  var mongoose: any;
 }
 
-const cached: Cached = global._mongoose ?? { conn: null, promise: null }
-global._mongoose = cached
+let cached = global.mongoose;
 
-export async function connectToMongoDB() {
-  if (cached.conn) return cached.conn
+if (!cached) {
+  cached = global.mongoose = { conn: null, promise: null };
+}
+
+async function connectToDatabase() {
+  if (cached.conn) return cached.conn;
 
   if (!cached.promise) {
-    const dbName = process.env.MONGODB_DB_NAME
-    cached.promise = mongoose.connect(MONGODB_URI_STR, {
-      ...(dbName ? { dbName } : {}),
-    })
+    cached.promise = mongoose.connect(MONGODB_URI).then((mongoose) => {
+      return mongoose;
+    });
   }
 
-  cached.conn = await cached.promise
-  return cached.conn
+  cached.conn = await cached.promise;
+  return cached.conn;
 }
 
+export default connectToDatabase;
