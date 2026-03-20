@@ -14,7 +14,6 @@ WORKDIR /app
 ENV NODE_ENV=production
 
 # better-sqlite3 needs python/make for native build — already done in builder
-COPY --from=builder /app/public* ./public/
 COPY --from=builder /app/.next/standalone ./
 COPY --from=builder /app/.next/static ./.next/static
 
