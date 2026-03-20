@@ -25,7 +25,9 @@ export default function Home() {
   useEffect(() => {
     fetch('/api/todos')
       .then((res) => res.json())
-      .then((data) => { if (Array.isArray(data)) setTodos(data); });
+      .then((data) => {
+        if (Array.isArray(data)) setTodos(data);
+      });
   }, []);
 
   const addTodo = async (e: React.FormEvent) => {
@@ -146,7 +148,10 @@ export default function Home() {
       ) : (
         <ul className="todo-list">
           {visible.map((todo) => (
-            <li key={todo.id} className={`todo-item${todo.done ? ' done' : ''}`}>
+            <li
+              key={todo.id}
+              className={`todo-item${todo.done ? ' done' : ''}`}
+            >
               <input
                 type="checkbox"
                 className="todo-checkbox"

@@ -12,14 +12,14 @@ A clean, minimal **To-Do app** built with Next.js and SQLite — no login, no ex
 
 ## 🛠 Tech Stack
 
-| Layer | Tech |
-|---|---|
-| Frontend / Backend | Next.js 16 App Router |
-| Database | SQLite via `better-sqlite3` |
-| Testing | Jest (unit + integration) + Playwright (E2E) |
-| Linting | Prettier |
-| CI/CD | GitHub Actions |
-| Deployment | Docker + AWS EC2 |
+| Layer              | Tech                                         |
+| ------------------ | -------------------------------------------- |
+| Frontend / Backend | Next.js 16 App Router                        |
+| Database           | SQLite via `better-sqlite3`                  |
+| Testing            | Jest (unit + integration) + Playwright (E2E) |
+| Linting            | Prettier                                     |
+| CI/CD              | GitHub Actions                               |
+| Deployment         | Docker + AWS EC2                             |
 
 ## 🚀 Running Locally
 
@@ -74,10 +74,10 @@ scripts/
 
 ## 🔐 GitHub Secrets (for CD)
 
-| Secret | Value |
-|---|---|
-| `EC2_HOST` | Your EC2 public IP |
-| `EC2_USERNAME` | `ubuntu` or `ec2-user` |
-| `EC2_SSH_KEY` | Full contents of your `.pem` private key |
+| Secret         | Value                                    |
+| -------------- | ---------------------------------------- |
+| `EC2_HOST`     | Your EC2 public IP                       |
+| `EC2_USERNAME` | `ubuntu` or `ec2-user`                   |
+| `EC2_SSH_KEY`  | Full contents of your `.pem` private key |
 
 CI requires **no secrets** — it runs entirely on the GitHub-hosted runner.

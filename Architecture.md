@@ -19,23 +19,27 @@ Browser
 ## DevOps Workflow
 
 ### Commit History
+
 Work is developed incrementally with descriptive, scoped commits so the history shows logical progress rather than a single bulk push.
 
 ### Dependabot
+
 `.github/dependabot.yml` automatically opens PRs when `npm` or GitHub Actions dependencies go stale (checked weekly).
 
 ### CI Pipeline (`.github/workflows/ci.yml`)
+
 Triggered on every `push` and `pull_request`:
 
-| Step | Command | Purpose |
-|---|---|---|
-| Install | `npm ci` | Reproducible, lockfile-exact install |
-| Lint | `npm run lint` | Prettier formatting check |
-| Unit tests | `npm test` | Jest — DB schema & CRUD |
-| Integration tests | `npm test` | Jest — full CRUD cycle via DB layer |
-| E2E tests | `npx playwright test` | Playwright — add task, toggle done |
+| Step              | Command               | Purpose                              |
+| ----------------- | --------------------- | ------------------------------------ |
+| Install           | `npm ci`              | Reproducible, lockfile-exact install |
+| Lint              | `npm run lint`        | Prettier formatting check            |
+| Unit tests        | `npm test`            | Jest — DB schema & CRUD              |
+| Integration tests | `npm test`            | Jest — full CRUD cycle via DB layer  |
+| E2E tests         | `npx playwright test` | Playwright — add task, toggle done   |
 
 ### CD Pipeline (`.github/workflows/deploy.yml`)
+
 Triggered on push to `main`. Uses `appleboy/ssh-action` to SSH into EC2 and run `scripts/deploy.sh`.
 
 ## Design Decisions

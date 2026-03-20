@@ -22,7 +22,7 @@ jobs:
             if [ -d ".git" ]; then
               git pull origin main
             else
-              git clone ${{ github.repositoryUrl }} .
+              git clone https://github.com/${{ github.repository }}.git .
             fi
 
             bash scripts/deploy.sh

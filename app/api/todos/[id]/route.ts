@@ -8,8 +8,7 @@ export async function DELETE(
   const { id } = await params;
 
   const todo = db.prepare('SELECT * FROM todos WHERE id = ?').get(id);
-  if (!todo)
-    return NextResponse.json({ error: 'Not found' }, { status: 404 });
+  if (!todo) return NextResponse.json({ error: 'Not found' }, { status: 404 });
 
   db.prepare('DELETE FROM todos WHERE id = ?').run(id);
   return NextResponse.json({ success: true });

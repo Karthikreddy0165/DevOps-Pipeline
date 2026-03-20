@@ -3,7 +3,9 @@ import { db } from '../../lib/db';
 describe('Todos Database — Unit', () => {
   it('should create the todos table', () => {
     const table = db
-      .prepare("SELECT name FROM sqlite_master WHERE type='table' AND name='todos'")
+      .prepare(
+        "SELECT name FROM sqlite_master WHERE type='table' AND name='todos'",
+      )
       .get();
     expect(table).toBeDefined();
   });
