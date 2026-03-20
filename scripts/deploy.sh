@@ -1,19 +1,22 @@
 #!/bin/bash
 set -e
 
-echo "Starting Dockerized Deployment process..."
+echo "==> Starting TaskFlow deployment..."
 
-# Enforce idempotency - directories exist
+# Idempotent directory setup
 mkdir -p ~/app/logs
-mkdir -p ~/app/data
 
 cd ~/app
 
-# Ensure correct env fields are ready to go in production
+# Create .env if it doesn't exist (safe to re-run)
 touch .env
 
-echo "Pulling Latest Docker Images & Restarting Services..."
-# docker-compose allows idempotent service execution cleanly removing old containers
-docker-compose --env-file .env up -d --build
+echo "==> Building and restarting Docker services..."
+# docker-compose up -d --build is idempotent:
+# - Rebuilds the image if source changed
+# - Restarts only changed containers
+# - Leaves the sqlite_data volume untouched (data persists)
+docker-compose up -d --build
 
-echo "Deployment Successful via Docker!"
+echo "==> Deployment successful!"
+echo "==> App is running at http://$(curl -s ifconfig.me):3000"

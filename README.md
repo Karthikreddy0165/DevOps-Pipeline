@@ -1,40 +1,83 @@
-# TaskFlow — Dockerized Todo Manager
+# TaskFlow
 
-A clean, user-specific task management app built with Next.js, NextAuth, and MongoDB.
+A clean, minimal **To-Do app** built with Next.js and SQLite — no login, no external services, just tasks.
 
 ## ✨ Features
 
-- 🐳 **Docker Simplicity** — One command to run app and database flawlessly.
-- 👤 **NextAuth Users** — Email/Password Login + Google Account support securely encrypted via `bcrypt`.
-- 🤝 **Collaboration Sharing** — Allow specified emails to concurrently view and modify your tasks.
-- 📝 **Detailed Notes** — Append detailed notes on tasks natively.
-- 📱 **WhatsApp Notice Integration** — Configure precise reminder times integrated smoothly into a backend worker for Twilio.
+- ✅ Add, complete, and delete tasks
+- 🔢 Live stats — Total / Active / Done
+- 🔍 Filter by All / Active / Done
+- 🗑️ Clear all completed tasks at once
+- 🐳 Docker ready for EC2 deployment
 
 ## 🛠 Tech Stack
 
-- **Container**: `docker-compose` & `Dockerfile`
-- **Frontend/Backend:** Next.js App Router (React, Auth, RESTful calls)
-- **Database:** MongoDB Atlas/Docker (Mongoose)
+| Layer | Tech |
+|---|---|
+| Frontend / Backend | Next.js 16 App Router |
+| Database | SQLite via `better-sqlite3` |
+| Testing | Jest (unit + integration) + Playwright (E2E) |
+| Linting | Prettier |
+| CI/CD | GitHub Actions |
+| Deployment | Docker + AWS EC2 |
 
-## 🚀 Quick Start
+## 🚀 Running Locally
 
-### Prerequisites
+```bash
+# Install dependencies
+npm install
 
-- Docker Engine installed locally OR Node.js + MongoDB
+# Start dev server
+npm run dev
+```
 
-### Simple Docker Local Development
+Open [http://localhost:3000](http://localhost:3000)
 
-1. **Environment Variables**
-   Create a `.env` in root explicitly. (Docker defines its own for `MONGO` connection in compose defaults, so simply putting Google Client info is enough).
-   ```env
-   GOOGLE_CLIENT_ID=your_id_optional
-   GOOGLE_CLIENT_SECRET=your_secret_optional
-   TWILIO_ACCOUNT_SID=xyz_optional
-   TWILIO_AUTH_TOKEN=xyz_optional
-   ```
-2. **Launch Compose App**
-   ```bash
-   docker-compose up -d --build
-   ```
+## 🧪 Running Tests
 
-Open [http://localhost:3000](http://localhost:3000) to view it in your browser.
+```bash
+# Unit + integration tests
+npm test
+
+# E2E tests (starts dev server automatically)
+npx playwright test
+```
+
+## 🐳 Running with Docker
+
+```bash
+docker-compose up -d --build
+```
+
+## 📁 Project Structure
+
+```
+app/
+  page.tsx              # Todo UI
+  api/todos/            # REST API — GET, POST
+  api/todos/[id]/       # REST API — PATCH (toggle), DELETE
+  globals.css           # Dark theme styles
+lib/
+  db.ts                 # SQLite connection + table setup
+__tests__/
+  unit/db.test.ts       # DB schema & CRUD unit tests
+  integration/api.test.ts # Full CRUD integration tests
+e2e/
+  home.spec.ts          # Playwright E2E — add & complete tasks
+.github/
+  workflows/ci.yml      # CI: lint → test → E2E
+  workflows/deploy.yml  # CD: SSH → git pull → docker-compose
+  dependabot.yml        # Auto dependency updates
+scripts/
+  deploy.sh             # Idempotent EC2 deploy script
+```
+
+## 🔐 GitHub Secrets (for CD)
+
+| Secret | Value |
+|---|---|
+| `EC2_HOST` | Your EC2 public IP |
+| `EC2_USERNAME` | `ubuntu` or `ec2-user` |
+| `EC2_SSH_KEY` | Full contents of your `.pem` private key |
+
+CI requires **no secrets** — it runs entirely on the GitHub-hosted runner.

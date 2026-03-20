@@ -7,10 +7,9 @@ on:
 jobs:
   deploy:
     runs-on: ubuntu-latest
-    needs: [] # Runs instantly or you could add "build-and-test" here
     steps:
       - name: Deploy to EC2
-        uses: appleboy/ssh-action@master
+        uses: appleboy/ssh-action@v1.0.3
         with:
           host: ${{ secrets.EC2_HOST }}
           username: ${{ secrets.EC2_USERNAME }}

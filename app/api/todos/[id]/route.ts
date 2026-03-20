@@ -1,30 +1,32 @@
 import { NextResponse } from 'next/server';
-import { getServerSession } from 'next-auth/next';
-import connectToDatabase from '../../../../lib/mongodb';
-import Todo from '../../../../lib/models/Todo';
+import { db } from '../../../../lib/db';
 
 export async function DELETE(
-  req: Request,
-  { params }: { params: { id: string } },
+  _req: Request,
+  { params }: { params: Promise<{ id: string }> },
 ) {
-  const session = await getServerSession();
-  if (!session || !session.user)
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  const { id } = await params;
 
-  await connectToDatabase();
+  const todo = db.prepare('SELECT * FROM todos WHERE id = ?').get(id);
+  if (!todo)
+    return NextResponse.json({ error: 'Not found' }, { status: 404 });
 
-  // Verify owner or shared
-  const todo = await Todo.findById(params.id);
-  if (!todo) return NextResponse.json({ error: 'Not found' }, { status: 404 });
+  db.prepare('DELETE FROM todos WHERE id = ?').run(id);
+  return NextResponse.json({ success: true });
+}
 
-  // Simple check
-  if (
-    todo.user.toString() !== (session as any).user.id &&
-    !todo.sharedWith.includes(session.user.email)
-  ) {
-    return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
-  }
+export async function PATCH(
+  req: Request,
+  { params }: { params: Promise<{ id: string }> },
+) {
+  const { id } = await params;
+  const body = await req.json();
 
-  await Todo.findByIdAndDelete(params.id);
-  return NextResponse.json({ success: true, message: 'Deleted successfully' });
+  db.prepare('UPDATE todos SET done = ? WHERE id = ?').run(
+    body.done ? 1 : 0,
+    id,
+  );
+
+  const updated = db.prepare('SELECT * FROM todos WHERE id = ?').get(id);
+  return NextResponse.json(updated);
 }

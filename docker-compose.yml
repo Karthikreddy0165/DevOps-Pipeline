@@ -6,21 +6,11 @@ services:
       - '3000:3000'
     env_file:
       - .env
-    environment:
-      - MONGODB_URI=mongodb://mongo:27017/taskflow
-      - NEXTAUTH_URL=http://localhost:3000
-      - NEXTAUTH_SECRET=simple_secret_key_change_in_production
-      - GOOGLE_CLIENT_ID=${GOOGLE_CLIENT_ID}
-      - GOOGLE_CLIENT_SECRET=${GOOGLE_CLIENT_SECRET}
-    depends_on:
-      - mongo
-
-  mongo:
-    image: mongo:6.0
-    ports:
-      - '27017:27017'
     volumes:
-      - mongo_data:/data/db
+      # Persist the SQLite database file across container restarts
+      - sqlite_data:/app/data
+    environment:
+      - NODE_ENV=production
 
 volumes:
-  mongo_data:
+  sqlite_data:

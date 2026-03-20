@@ -1,44 +1,35 @@
 import { NextResponse } from 'next/server';
-import { getServerSession } from 'next-auth/next';
-import connectToDatabase from '../../../lib/mongodb';
-import Todo from '../../../lib/models/Todo';
+import { db } from '../../../lib/db';
+
+// Ensure the todos table exists
+db.exec(`
+  CREATE TABLE IF NOT EXISTS todos (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    title TEXT NOT NULL,
+    done INTEGER DEFAULT 0,
+    created_at TEXT DEFAULT (datetime('now'))
+  );
+`);
 
 export async function GET() {
-  const session = await getServerSession();
-  if (!session || !session.user) return NextResponse.json([], { status: 401 });
-
-  await connectToDatabase();
-  // Fetch tasks owned by user or shared with user
-  const todos = await Todo.find({
-    $or: [
-      { user: (session as any).user.id },
-      { sharedWith: session.user.email },
-    ],
-  }).sort({ createdAt: -1 });
-
+  const todos = db
+    .prepare('SELECT * FROM todos ORDER BY created_at DESC')
+    .all();
   return NextResponse.json(todos);
 }
 
 export async function POST(req: Request) {
-  const session = await getServerSession();
-  if (!session || !session.user)
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-
   const body = await req.json();
   if (!body.title)
     return NextResponse.json({ error: 'Title required' }, { status: 400 });
 
-  await connectToDatabase();
-  const newTodo = await Todo.create({
-    title: body.title,
-    notes: body.notes || '',
-    sharedWith: body.sharedWith
-      ? body.sharedWith.split(',').map((e: string) => e.trim())
-      : [],
-    whatsappNumber: body.whatsappNumber || '',
-    reminderTime: body.reminderTime || null,
-    user: (session as any).user.id,
-  });
+  const result = db
+    .prepare('INSERT INTO todos (title) VALUES (?)')
+    .run(body.title.trim());
+
+  const newTodo = db
+    .prepare('SELECT * FROM todos WHERE id = ?')
+    .get(result.lastInsertRowid);
 
   return NextResponse.json(newTodo, { status: 201 });
 }

@@ -11,11 +11,15 @@ RUN npm run build
 
 FROM node:20-alpine AS runner
 WORKDIR /app
-ENV NODE_ENV production
+ENV NODE_ENV=production
 
-COPY --from=builder /app/public ./public
+# better-sqlite3 needs python/make for native build — already done in builder
+COPY --from=builder /app/public* ./public/
 COPY --from=builder /app/.next/standalone ./
 COPY --from=builder /app/.next/static ./.next/static
+
+# SQLite data directory — mapped as volume in docker-compose
+RUN mkdir -p /app/data
 
 EXPOSE 3000
 CMD ["node", "server.js"]

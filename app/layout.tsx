@@ -1,7 +1,6 @@
-import Providers from './providers';
-
 export const metadata = {
-  title: 'TaskFlow Simple',
+  title: 'TaskFlow',
+  description: 'A simple task and shop app',
 };
 
 export default function RootLayout({
@@ -11,9 +10,7 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
-      <body>
-        <Providers>{children}</Providers>
-      </body>
+      <body>{children}</body>
     </html>
   );
 }
