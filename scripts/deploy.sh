@@ -18,7 +18,7 @@ fi
 if ! docker compose version &> /dev/null
 then
   echo "==> Installing Docker Compose plugin..."
-  sudo apt install docker-compose-plugin -y
+  sudo apt install docker-compose -y
 fi
 
 mkdir -p ~/app/logs
@@ -27,7 +27,7 @@ cd ~/app
 touch .env
 
 echo "==> Building and restarting Docker services..."
-docker compose up -d --build
+docker-compose up -d --build
 
 echo "==> Deployment successful!"
 echo "==> App is running at http://$(curl -s ifconfig.me):3000"
