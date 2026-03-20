@@ -3,19 +3,30 @@ set -e
 
 echo "==> Starting TaskFlow deployment..."
 
-# Idempotent directory setup
-mkdir -p ~/app/logs
+# Install Docker if not present
+if ! command -v docker &> /dev/null
+then
+  echo "==> Docker not found. Installing..."
+  sudo apt update
+  sudo apt install docker.io -y
+  sudo systemctl start docker
+  sudo systemctl enable docker
+  sudo usermod -aG docker $USER
+fi
 
+# Install docker compose plugin if missing
+if ! docker compose version &> /dev/null
+then
+  echo "==> Installing Docker Compose plugin..."
+  sudo apt install docker-compose-plugin -y
+fi
+
+mkdir -p ~/app/logs
 cd ~/app
 
-# Create .env if it doesn't exist (safe to re-run)
 touch .env
 
 echo "==> Building and restarting Docker services..."
-# docker compose (V2 plugin) up -d --build is idempotent:
-# - Rebuilds the image if source changed
-# - Restarts only changed containers
-# - Leaves the sqlite_data volume untouched (data persists)
 docker compose up -d --build
 
 echo "==> Deployment successful!"
