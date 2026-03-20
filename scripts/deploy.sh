@@ -12,11 +12,11 @@ cd ~/app
 touch .env
 
 echo "==> Building and restarting Docker services..."
-# docker-compose up -d --build is idempotent:
+# docker compose (V2 plugin) up -d --build is idempotent:
 # - Rebuilds the image if source changed
 # - Restarts only changed containers
 # - Leaves the sqlite_data volume untouched (data persists)
-docker-compose up -d --build
+docker compose up -d --build
 
 echo "==> Deployment successful!"
 echo "==> App is running at http://$(curl -s ifconfig.me):3000"
